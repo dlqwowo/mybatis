@@ -40,6 +40,7 @@ public class PooledDataSource implements DataSource {
 
   private static final Log log = LogFactory.getLog(PooledDataSource.class);
 
+  // 记录池化的状态
   private final PoolState state = new PoolState(this);
 
   private final UnpooledDataSource dataSource;
@@ -48,7 +49,9 @@ public class PooledDataSource implements DataSource {
   protected int poolMaximumActiveConnections = 10;
   protected int poolMaximumIdleConnections = 5;
   protected int poolMaximumCheckoutTime = 20000;
+  // 连接超时时间
   protected int poolTimeToWait = 20000;
+  // 重新连接次数
   protected int poolMaximumLocalBadConnectionTolerance = 3;
   protected String poolPingQuery = "NO PING QUERY SET";
   protected boolean poolPingEnabled;
@@ -151,7 +154,7 @@ public class PooledDataSource implements DataSource {
 
   /**
    * Sets the default network timeout value to wait for the database operation to complete. See {@link Connection#setNetworkTimeout(java.util.concurrent.Executor, int)}
-   * 
+   *
    * @param milliseconds
    *          The time in milliseconds to wait for the database operation to complete.
    * @since 3.5.2

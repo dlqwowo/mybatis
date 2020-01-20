@@ -36,6 +36,8 @@ import org.apache.ibatis.io.Resources;
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
+
+//这个数据源的实现只是每次被请求时打开和关闭连接
 public class UnpooledDataSource implements DataSource {
 
   private ClassLoader driverClassLoader;
@@ -52,6 +54,7 @@ public class UnpooledDataSource implements DataSource {
   private Integer defaultNetworkTimeout;
 
   static {
+    // Class.forName('jdbc.dd.driver') 会注册驱动，其实就是forname会初始化，Driver中有静态方法，初始化的时候会调用DriverManger.registDriver方法
     Enumeration<Driver> drivers = DriverManager.getDrivers();
     while (drivers.hasMoreElements()) {
       Driver driver = drivers.nextElement();
@@ -218,23 +221,27 @@ public class UnpooledDataSource implements DataSource {
 
   private Connection doGetConnection(Properties properties) throws SQLException {
     initializeDriver();
+    // JDBC 连接
     Connection connection = DriverManager.getConnection(url, properties);
     configureConnection(connection);
     return connection;
   }
 
   private synchronized void initializeDriver() throws SQLException {
+    // 还没有注册，即class.forName()
     if (!registeredDrivers.containsKey(driver)) {
       Class<?> driverType;
       try {
         if (driverClassLoader != null) {
           driverType = Class.forName(driver, true, driverClassLoader);
         } else {
+          // 创建一个默认的classload  new ClassLoader[]
           driverType = Resources.classForName(driver);
         }
         // DriverManager requires the driver to be loaded via the system ClassLoader.
         // http://www.kfu.com/~nsayer/Java/dyn-jdbc.html
         Driver driverInstance = (Driver)driverType.getDeclaredConstructor().newInstance();
+        // 这一步可能会有同步问题
         DriverManager.registerDriver(new DriverProxy(driverInstance));
         registeredDrivers.put(driver, driverInstance);
       } catch (Exception e) {
